@@ -21,19 +21,15 @@ class BaseMetricLoss(torch.nn.Module):
         """
         if self.normalize_embeddings:
             embeddings = F.normalize(embeddings, p=2, dim=1)
-        loss = self.compute_loss(embeddings, labels)
+        loss, logs = self.compute_loss(embeddings, labels)
 
+        assert "loss" in logs.keys(), "Each loss function need to return dict with loss key"
         # In case of Nan loss set it to zero
         # TODO: Rethink two situation. One: no pair and triplet, then zero is fine
         #                              Second: Just model exploiding
         if torch.isnan(loss):
-            if isinstance(embeddings, tuple):
-                loss = torch.sum(embeddings[0] * 0)
-                print("NaN Loss")
-            elif isinstance(embeddings, torch.Tensor):
-                loss = torch.sum(embeddings * 0)
-            else:
-                raise TypeError(f"Handling zero loss not implemented for embeddings of type {type(embeddings)}")
+            loss = torch.zeros([], requires_grad=True)
+            logs["loss"] = 0
 
-        return loss
+        return loss, logs
 

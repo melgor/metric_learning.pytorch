@@ -7,8 +7,9 @@ import torch.nn.functional as F
 class BaseTripletMiner(abc.ABC):
     """ Base class for Triplet Sampler"""
 
-    def __init__(self, normalize_embeddings: bool=True):
-        self.normalize_embeddings = normalize_embeddings
+    def __init__(self, cfg):
+        self.normalize_embeddings = cfg.LOSSES.TRIPLET_MINING.NORMALIZE
+        self.margin = cfg.LOSSES.TRIPLET_MINING.MARGIN
 
     def __call__(self, embeddings: torch.Tensor, labels: torch.Tensor):
         if self.normalize_embeddings:
@@ -17,7 +18,6 @@ class BaseTripletMiner(abc.ABC):
 
         dist_ap, dist_an = self.sampling(dist_mat, labels)
         return dist_ap, dist_an
-
 
     @staticmethod
     def calculate_dist_mat(embeddings):
@@ -40,3 +40,15 @@ class BaseTripletMiner(abc.ABC):
     @abc.abstractmethod
     def sampling(self, dist_mat: torch.Tensor, labels: torch.Tensor):
         pass
+
+    def filter(self, ap_mat: torch.Tensor, an_mat: torch.Tensor, condition: bool = None):
+        """
+        Filter triplet based on margin
+        """
+        if self.margin > 0.0:
+            triplet_margin = ap_mat - an_mat
+            threshold_condition = triplet_margin > -self.margin
+            if condition is not None:
+                threshold_condition &= condition
+            ap_mat, an_mat = ap_mat[threshold_condition], an_mat[threshold_condition]
+        return ap_mat, an_mat

@@ -7,20 +7,23 @@ import logging
 
 class BaseTester:
     def __init__(self,
+                 cfg,
                  models,
                  test_dataset,
                  batch_size,
-                 dataloader_num_workers
+                 dataloader_num_workers,
+                 name=""
                  ):
         self.models = models
         self.test_dataset = test_dataset
         self.batch_size = batch_size
         self.dataloader_num_workers = dataloader_num_workers
+        self.name = name
 
         self.dataloader = None
         self.losses = {}
         self.device = torch.device("cuda")
-        self.logger = logging.getLogger('metric.learning')
+        self.logger = logging.getLogger(cfg.LOGGER.NAME)
         self.setup_dataloader()
 
     def setup_dataloader(self):
@@ -37,10 +40,10 @@ class BaseTester:
         self.set_to_eval()
 
         embeddings = self.extract_embeddings()
-        accuracies = []
+        accuracies = {}
         for K in [1, 5, 10]:
             acc_k = self.accuracy_at_k(np.array(self.test_dataset.targets), embeddings, K, 200)
-            accuracies.append(acc_k)
+            accuracies[f"{self.name} Accuraccy at {K}"] = acc_k
             self.logger.info("accuracy@{} = {}".format(K, acc_k))
 
         self.logger.info("End Testing")

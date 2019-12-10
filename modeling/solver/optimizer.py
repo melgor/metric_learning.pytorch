@@ -1,7 +1,7 @@
 import torch
 
 
-def build_optimizer(model, name="Adam", lr=0.00001, wd=0.0005):
+def build_optimizer(cfg, model):
     params = []
     for key, value in model.named_parameters():
         if not value.requires_grad:
@@ -10,7 +10,7 @@ def build_optimizer(model, name="Adam", lr=0.00001, wd=0.0005):
         if "backbone" in key:
             lr_mul = 0.1
         params += [{"params": [value], "lr_mul": lr_mul}]
-    optimizer = getattr(torch.optim, name)(params,
-                                           lr=lr,
-                                           weight_decay=wd)
+    optimizer = getattr(torch.optim, cfg.SOLVER.OPTIMIZER_NAME)(params,
+                                                                lr=cfg.SOLVER.BASE_LR,
+                                                                weight_decay=cfg.SOLVER.WEIGHT_DECAY)
     return optimizer

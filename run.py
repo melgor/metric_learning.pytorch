@@ -1,6 +1,6 @@
 import os
 from datetime import datetime
-
+from contextlib import redirect_stdout
 
 from modeling.losses import build_losses
 from modeling.miners import build_mining
@@ -17,9 +17,14 @@ if __name__ == "__main__":
     cfg.SAVE_DIR = os.path.join(cfg.SAVE_DIR, dateTimeObj.strftime("%d-%b-%Y_%H:%M"))
     os.makedirs(cfg.SAVE_DIR, exist_ok=True)
 
+    # save current config to output directory
+    with open(f"{cfg.SAVE_DIR}/config.yml", 'w') as f:
+        with redirect_stdout(f):
+            print(cfg.dump())
+
     setup_logger(cfg)
     models = build_model(cfg)
-    optimizers = build_optimizer(models)
+    optimizers = build_optimizer(cfg, models)
     loss_funcs = build_losses(cfg)
     mining_funcs = build_mining(cfg)
     sampler = build_sampler(cfg)
